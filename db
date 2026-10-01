@@ -1,0 +1,60 @@
+CREATE DATABASE IF NOT EXISTS hotel_booking_db;
+USE hotel_booking_db;
+
+-- 1. Hotels Table (With Geo Coordinates for Distance)
+CREATE TABLE hotels (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    picture_url TEXT NOT NULL,         -- Used for the TOP HALF PAGE Banner
+    latitude DECIMAL(10, 8) NOT NULL,  -- For calculating distance
+    longitude DECIMAL(11, 8) NOT NULL, -- For calculating distance
+    address VARCHAR(555) NOT NULL,     -- Text location of hotel
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- 2. Food Items Table (With Availability Tracking)
+CREATE TABLE food_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hotel_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    picture_url TEXT NOT NULL,         -- Pic of food
+    price DECIMAL(10, 2) NOT NULL,     -- Rate of food
+    is_available BOOLEAN DEFAULT TRUE, -- Is current item available status
+    FOREIGN KEY (hotel_id) REFERENCES hotels(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 3. Reviews Table (Defaults to 4 Stars if not specified)
+CREATE TABLE reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hotel_id INT NOT NULL,
+    customer_name VARCHAR(100) NOT NULL,
+    rating INT DEFAULT 4 CHECK (rating BETWEEN 1 AND 5), -- Default 4 Stars fallback
+    comment TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (hotel_id) REFERENCES hotels(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 4. Preorders Table
+CREATE TABLE preorders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    hotel_id INT NOT NULL,
+    food_item_id INT NOT NULL,
+    fulfillment_type ENUM('IN_PERSON', 'DELIVERY') NOT NULL,
+    delivery_address TEXT DEFAULT NULL,
+    status ENUM('PENDING', 'PAID', 'COMPLETED', 'CANCELLED') DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (hotel_id) REFERENCES hotels(id) ON DELETE CASCADE,
+    FOREIGN KEY (food_item_id) REFERENCES food_items(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 5. Coupons Table
+CREATE TABLE coupons_vouchers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    preorder_id INT NOT NULL,
+    unique_code VARCHAR(100) UNIQUE NOT NULL, -- Unique coupon generated on backend
+    is_redeemed BOOLEAN DEFAULT FALSE,
+    expires_at DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (preorder_id) REFERENCES preorders(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
